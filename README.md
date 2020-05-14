@@ -19,4 +19,8 @@ A couple of lists are created:
 * Additional Findings by Smart Check
 * Intersection of ECR and Smart Check
 
+## Requirements
+* Python3
+* Boto3 (`pip3 install boto3 --user`)
+
 **Note: The image must exist in both repositories with the identical tag**
