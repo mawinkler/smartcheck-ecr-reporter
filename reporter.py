@@ -16,6 +16,7 @@ import pprint
 def ecr_report(cfg):
     ###Queries the scan report of the given image from ECR###
 
+    print("Accessing ECR " + cfg['ecr']['registry_id'])
     print("Query Scan Report from ECR for "
           + cfg['repository']['name']
           + ":" + cfg['repository']['image_tag'])
@@ -100,7 +101,10 @@ def dssc_report(cfg):
 
     response_token = response['token']
 
-    print("Search for latest Scan ID of " + cfg['repository']['name'])
+    print("Search for latest Scan ID of "
+          + cfg['repository']['name']
+          + ":" + cfg['repository']['image_tag'])
+
     url = cfg['dssc']['service'] + "/api/scans"
     data = { }
     post_header = {
@@ -125,7 +129,7 @@ def dssc_report(cfg):
     if ( scan_id == ""):
         raise ValueError("Scan not found")
 
-    print("Query Report for Scan ID " + scan_id)
+    print("Query Scan Report for ID " + scan_id)
     url = cfg['dssc']['service'] + "/api/scans/" + scan_id
     data = { }
     post_header = {
