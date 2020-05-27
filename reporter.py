@@ -105,7 +105,7 @@ def dssc_report(cfg):
           + cfg['repository']['name']
           + ":" + cfg['repository']['image_tag'])
 
-    url = cfg['dssc']['service'] + "/api/scans"
+    url = cfg['dssc']['service'] + "/api/scans?limit=500"
     data = { }
     post_header = {
         "Content-type": content_type,
