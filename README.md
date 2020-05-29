@@ -1,5 +1,7 @@
 # smartcheck-ecr-reporter
-Compares discovered vulnerabilities by Smart Check and ECR.
+Compares discovered vulnerabilities by Smart Check and Clair. The used Clair
+engine is the embedded one of AWS ECR which can be used free of charge. This
+small project doesn't rate AWS capabilities in any sense.
 
 First, create your config.yml by
 ```shell
@@ -13,11 +15,11 @@ Run the comparison by
 ```
 
 A couple of lists are created:
-* Findings by ECR
+* Findings by Clair
 * Findings by Smart Check
-* Additional Findings by ECR
+* Additional Findings by Clair
 * Additional Findings by Smart Check
-* Intersection of ECR and Smart Check
+* Intersection of Clair and Smart Check
 
 ## Requirements
 * Python3

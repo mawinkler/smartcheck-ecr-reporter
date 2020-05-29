@@ -235,7 +235,7 @@ def main():
     pp = pprint.PrettyPrinter()
 
     print()
-    print("Findings by ECR:")
+    print("Findings by Clair:")
     pp.pprint(ecr_vulns)
 
     print()
@@ -243,7 +243,7 @@ def main():
     pp.pprint(dssc_vulns)
 
     print()
-    print("Additional Findings by ECR:")
+    print("Additional Findings by Clair:")
     pp.pprint(ecr_additionals)
 
     print()
@@ -251,7 +251,7 @@ def main():
     pp.pprint(dssc_additionals)
 
     print()
-    print("Intersection of ECR and Smart Check:")
+    print("Intersection of Clair and Smart Check:")
     pp.pprint(intersection)
 
     exit(0)
