@@ -23,6 +23,8 @@ A couple of lists are created:
 
 ## Requirements
 * Python3
-* Boto3 (`pip3 install boto3 --user`)
+* urllib3 (`pip3 install urllib3 --user`)
+* requests (`pip3 install requests --user`)
+* boto3 (`pip3 install boto3 --user`)
 
 **Note: The image must exist in both repositories with the identical tag**
