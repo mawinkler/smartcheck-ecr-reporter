@@ -21,49 +21,73 @@ def ecr_report(cfg):
           + cfg['repository']['name']
           + ":" + cfg['repository']['image_tag'])
     ecr = boto3.client('ecr')
-    response = ecr.describe_image_scan_findings(
-        registryId = cfg['ecr']['registry_id'],
-        repositoryName = cfg['repository']['name'],
-        imageId = { 'imageTag': cfg['repository']['image_tag'] }
-    )
 
     vulns = {}
     vul_count_defcon1 = 0
     vul_count_critical = 0
     vul_count_high = 0
     vul_count_medium = 0
+    vul_count_low = 0
+    vul_count_informational = 0
+    vul_count_undefined = 0
+    vul_count = 0
 
-    for vul in response['imageScanFindings']['findings']:
-        vul_cve = vul['name']
+    response = ecr.describe_image_scan_findings(
+        registryId = cfg['ecr']['registry_id'],
+        repositoryName = cfg['repository']['name'],
+        imageId = { 'imageTag': cfg['repository']['image_tag'] },
+        maxResults = 100
+    )
 
-        vul_severity = vul['severity'].lower()
-        if (( vul_severity not in cfg['criticalities']) and
-            ( vul_severity != "unknown" )):
-            continue
+    while (True):
+        for vul in response['imageScanFindings']['findings']:
+            vul_cve = vul['name']
 
-        if (vul_severity == "defcon1"): vul_count_defcon1 += 1
-        if (vul_severity == "critical"): vul_count_critical += 1
-        if (vul_severity == "high"): vul_count_high += 1
-        if (vul_severity == "medium"): vul_count_medium += 1
+            vul_severity = vul['severity'].lower()
+            if ( vul_severity not in cfg['criticalities']):
+                continue
 
-        vul_av2 = ""
-        for attr in vul['attributes']:
-            if (attr.get('key') == 'CVSS2_VECTOR'):
-                vul_av2 = attr.get('value')
+            if (vul_severity == "defcon1"): vul_count_defcon1 += 1
+            if (vul_severity == "critical"): vul_count_critical += 1
+            if (vul_severity == "high"): vul_count_high += 1
+            if (vul_severity == "medium"): vul_count_medium += 1
+            if (vul_severity == "low"): vul_count_low += 1
+            if ((vul_severity == "informational") or (vul_severity == "negligible")): vul_count_informational += 1
+            if ((vul_severity == "undefined") or (vul_severity == "unknown")): vul_count_undefined += 1
+            vul_count += 1
 
-        if ((str(vul_av2).find('AV:N') >= 0)):
-            vul_av = "network"
+            vul_av2 = ""
+            for attr in vul['attributes']:
+                if (attr.get('key') == 'CVSS2_VECTOR'):
+                    vul_av2 = attr.get('value')
+
+            if ((str(vul_av2).find('AV:N') >= 0)):
+                vul_av = "network"
+            else:
+                vul_av = "local"
+
+            vulns[str(vul_cve)] = { "severity": str(vul_severity),
+                                    "av": str(vul_av) }
+
+        if (response.get('nextToken', "") == ""):
+            break
         else:
-            vul_av = "local"
+            response = ecr.describe_image_scan_findings(
+                registryId = cfg['ecr']['registry_id'],
+                repositoryName = cfg['repository']['name'],
+                imageId = { 'imageTag': cfg['repository']['image_tag'] },
+                maxResults = 100,
+                nextToken = response['nextToken']
+            )
 
-        vulns[str(vul_cve)] = { "severity": str(vul_severity),
-                                "av": str(vul_av) }
-
-    print("defcon1: {}, critical: {}, high: {}, medium: {}".format(
-                                                            vul_count_defcon1,
-                                                            vul_count_critical,
-                                                            vul_count_high,
-                                                            vul_count_medium))
+    print("defcon1: {}, critical: {}, high: {}, ".format(vul_count_defcon1,
+                                                         vul_count_critical,
+                                                         vul_count_high) +
+          "medium: {}, low: {}, informational: {}, ".format(vul_count_medium,
+                                                            vul_count_low,
+                                                            vul_count_informational) +
+          "undefined: {}, total: {}".format(vul_count_undefined,
+                                            vul_count))
     print()
 
     return vulns
@@ -155,6 +179,10 @@ def dssc_report(cfg):
     vul_count_critical = 0
     vul_count_high = 0
     vul_count_medium = 0
+    vul_count_low = 0
+    vul_count_informational = 0
+    vul_count_undefined = 0
+    vul_count = 0
 
     for result in result_list:
         if 'vulnerabilities' in result:
@@ -175,18 +203,22 @@ def dssc_report(cfg):
 
             for item in response_layer.get('vulnerabilities', {}):
                 affected=item.get('name', {})
+
                 for vul in item.get('vulnerabilities', {}):
                     vul_cve = vul.get('name', {})
 
                     vul_severity = vul.get('severity', {}).lower()
-                    if (( vul_severity not in cfg['criticalities'] ) and
-                        ( vul_severity != "unknown" )):
+                    if ( vul_severity not in cfg['criticalities'] ):
                         continue
 
                     if (vul_severity == "defcon1"): vul_count_defcon1 += 1
                     if (vul_severity == "critical"): vul_count_critical += 1
                     if (vul_severity == "high"): vul_count_high += 1
                     if (vul_severity == "medium"): vul_count_medium += 1
+                    if (vul_severity == "low"): vul_count_low += 1
+                    if ((vul_severity == "informational") or (vul_severity == "negligible")): vul_count_informational += 1
+                    if ((vul_severity == "undefined") or (vul_severity == "unknown")): vul_count_undefined += 1
+                    vul_count += 1
 
                     vul_av2 = vul.get('metadata', {}) \
                                  .get('NVD', {}) \
@@ -206,11 +238,15 @@ def dssc_report(cfg):
                     vulns[str(vul_cve)] = { "severity": str(vul_severity),
                                             "av": str(vul_av)}
 
-    print("defcon1: {}, critical: {}, high: {}, medium: {}".format(
-                                                            vul_count_defcon1,
-                                                            vul_count_critical,
-                                                            vul_count_high,
-                                                            vul_count_medium))
+    print("defcon1: {}, critical: {}, high: {}, ".format(vul_count_defcon1,
+                                                         vul_count_critical,
+                                                         vul_count_high) +
+          "medium: {}, low: {}, informational: {}, ".format(vul_count_medium,
+                                                            vul_count_low,
+                                                            vul_count_informational) +
+          "undefined: {}, total: {}".format(vul_count_undefined,
+                                            vul_count))
+
     print()
 
     return vulns
@@ -244,10 +280,12 @@ def main():
 
     print()
     print("Additional Findings by Clair:")
+    # pp.pprint(list(set(ecr_vulns) - set(dssc_vulns)))
     pp.pprint(ecr_additionals)
 
     print()
     print("Additional Findings by Smart Check:")
+    # pp.pprint(list(set(dssc_vulns) - set(ecr_vulns)))
     pp.pprint(dssc_additionals)
 
     print()
